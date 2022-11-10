@@ -7,7 +7,12 @@ editor: visual
 ## Drawing inference from statistical models, and statistical power
 
 ```{r}
+#| include: false
 library(tidyverse)
+
+```
+
+```{r}
 
 set.seed(1)
 population <- rnorm(1000000, mean = 1.5, sd = 3)
