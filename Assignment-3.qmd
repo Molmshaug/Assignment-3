@@ -1,0 +1,85 @@
+---
+title: "Assignment_3"
+format: html
+editor: visual
+---
+
+## Drawing inference from statistical models, and statistical power
+
+```{r}
+library(tidyverse)
+
+set.seed(1)
+population <- rnorm(1000000, mean = 1.5, sd = 3)
+
+
+samp1 <- data.frame(y = sample(population, 8, replace = FALSE))
+
+samp2 <- data.frame(y = sample(population, 40, replace = FALSE))
+
+
+m1 <- lm(y ~ 1, data = samp1)
+m2 <- lm(y ~ 1, data = samp2)
+
+summary(m1)
+summary(m2)
+```
+
+#### 1. Explain the estimate, SE, t-value, and p-value from the regression models that we created previously
+
+m1: Estimate: 1.840, SE: 1.251, t-value: 1.47, p-value: 0.185
+
+m2: Estimate: 1.5642, SE: 0.4774, t-value: 3.276, p-value: 0.00221
+
+The estimate is the average of all values of the numbers in the "samp1", the SE (standard error) represents the standard deviation of the observed values across the samples from the average. It can then tell you how wrong the regression model is on average. The t-value is the ratio between the estimate and the standard error, estimate / SE. The p-value indicate the probability of finding certain or more extreme data, when you assume the null hypothesis is true.
+
+#### 2. Discuss what contributes to the different results in the two studies
+
+The biggest difference in the two samples are the sample sizes. While m1 only consists of 8 observations, m2 consists of 40 observations. With a higher number of observations the value of one observation will have less impact on the estimate. One observation out of 40 is only worth 2,5% of the entire sample, while one observation out of 8 is worth 12,5% of the entire sample. We often see higher SE with lower sample sizes, and this will directly impact both the t-value and the p-value.
+
+#### 3. Why do we use the shaded are in the lower and upper tail of the t-distribution
+
+We use the shaded area on both sides of the estimate because we count results as more extreme both ways (positive and negative value). The shaded area corresponds to the observed p-value.
+
+```{r}
+# Create data frames to store the model estimates
+results_8 <- data.frame(estimate = rep(NA, 1000), 
+                      se = rep(NA, 1000), 
+                      pval = rep(NA, 1000), 
+                      n = 8)  
+
+results_40 <- data.frame(estimate = rep(NA, 1000), 
+                      se = rep(NA, 1000), 
+                      pval = rep(NA, 1000), 
+                      n = 40)
+
+# A for loop used to sample 1000 studies, each iteration (i) will draw a new sample
+# from the population. 
+
+for(i in 1:1000) {
+  
+  # Draw a sample 
+  samp1 <- data.frame(y = sample(population, 8, replace = FALSE))
+  samp2 <- data.frame(y = sample(population, 40, replace = FALSE))
+
+  # Model the data
+  m1 <- lm(y ~ 1, data = samp1)
+  m2 <- lm(y ~ 1, data = samp2)
+  
+  # Extract values from the models
+  results_8[i, 1] <- coef(summary(m1))[1, 1]
+  results_8[i, 2] <- coef(summary(m1))[1, 2]
+  results_8[i, 3] <- coef(summary(m1))[1, 4]
+
+  results_40[i, 1] <- coef(summary(m2))[1, 1]
+  results_40[i, 2] <- coef(summary(m2))[1, 2]
+  results_40[i, 3] <- coef(summary(m2))[1, 4]
+  
+  
+}
+
+
+# Save the results in a combined data frame
+
+results <- bind_rows(results_8, results_40)
+```
