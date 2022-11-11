@@ -149,6 +149,8 @@ pwr8 <- pwr.t.test(n = 8, sig.level = 0.05, d = 1.5/3, type = "one.sample")
 
 We can calculate the statistical power from one sample of 8 variables with effect size of 0.5 an alpha level of 5%, to have a power of 23.2%. In the sample with 40 variables we get a power of 86.9% with effect size of 0.5 and the same alpha level of 5%. This shows us that a bigger samples gives us a greater chance at detecting a true effect.
 
+#### 8. With a significance level of 5%, how many studies would you give a "false positive" result if you did many repeated studies?
+
 ```{r}
 set.seed(2)
 population <- rnorm(1000000, mean = 0, sd = 3)
@@ -222,5 +224,3 @@ results_null %>%
              count = "Significant Results",
              percent = "Percentage (%)")
 ```
-
-#### 8. With a significance level of 5%, how many studies would you give a "false positive" result if you did many repeated studies?
