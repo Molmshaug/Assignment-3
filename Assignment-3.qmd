@@ -9,7 +9,9 @@ editor: visual
 ```{r}
 #| include: false
 library(tidyverse)
-
+library(gt)
+library(pwr)
+library(broom)
 ```
 
 ```{r}
@@ -88,3 +90,137 @@ for(i in 1:1000) {
 
 results <- bind_rows(results_8, results_40)
 ```
+
+```{r}
+results %>% 
+  group_by(n) %>% 
+  summarise(sd_estimate = sd(estimate, na.rm = T),
+            mean_se = mean(se, na.rm = T)) %>%
+  gt() %>% 
+  cols_label(n = "Sample size",
+             sd_estimate = "SD of estimate",
+             mean_se = "Average of SE") %>% 
+  tab_footnote(footnote = "Abbreviations: SD, standard deviaton; SE, standard error")
+```
+
+#### 4. Calculate the standard deviation of the estimate variable, and the average of the SE variable for each of the study sample sizes (8 and 40). Explain why these numbers are very similar. How can you define the Standard Error (SE) in light of these calculations?
+
+Standard deviation (SD) and standard error both measure variability, but apply to different distributions. In both higher number indicate greater dispersion of the values. SD measures the distance between each data point and the sample mean, while SE estimates the variability across samples of a population. In this example the sample size affects the average of SE.
+
+```{r}
+# A two facets histogram can be created with ggplot2
+results %>%
+  ggplot(aes(pval)) + 
+  geom_histogram() +
+  facet_wrap(~ n)
+
+
+# Count the proportion of tests below a certain p-value for each 
+results %>%
+  filter(pval < 0.05) %>%
+  group_by(n) %>%
+  summarise(sig_results = n()/1000)
+
+# Using the pwr package
+
+
+
+```
+
+#### 5. Create a histogram of the p-values from each study sample-size. How do you interpret these histograms, what do they tell you about the effect of sample size on statistical power?
+
+The histogram shows a greater probability of finding "extreme results" in m2 compared to m1. This shows us that a larger sample size gives us greater statistical power.
+
+#### 6. Calculate the number of studies from each sample size that declare a statistical significant effect
+
+In m1 we calculate that there are 23.4% of the results that are statistically significant with a p-value of 0.05. In m2 we calculate that there are 86.3% of the results are statistically significant with a p-value of 0.05.
+
+```{r}
+
+pwr40 <- pwr.t.test(n = 40, sig.level = 0.05, d = 1.5/3, type = "one.sample")
+
+pwr8 <- pwr.t.test(n = 8, sig.level = 0.05, d = 1.5/3, type = "one.sample")
+
+
+
+```
+
+#### 7. Using the pwr package, calculate the power of a one-sample t-test, with a effect size og 1.5/3, your specified significance level and sample sizes 8 and 40. Explain the results in light of your simulations
+
+We can calculate the statistical power from one sample of 8 variables with effect size of 0.5 an alpha level of 5%, to have a power of 23.2%. In the sample with 40 variables we get a power of 86.9% with effect size of 0.5 and the same alpha level of 5%. This shows us that a bigger samples gives us a greater chance at detecting a true effect.
+
+```{r}
+set.seed(2)
+population <- rnorm(1000000, mean = 0, sd = 3)
+
+
+# Create data frames to store the model estimates
+results_8 <- data.frame(estimate = rep(NA, 1000), 
+                      se = rep(NA, 1000), 
+                      pval = rep(NA, 1000), 
+                      n = 8)  
+
+results_40 <- data.frame(estimate = rep(NA, 1000), 
+                      se = rep(NA, 1000), 
+                      pval = rep(NA, 1000), 
+                      n = 40)
+
+# A for loop used to sample 1000 studies, each iteration (i) will draw a new sample
+# from the population. 
+
+for(i in 1:1000) {
+  
+  # Draw a sample 
+  samp1 <- data.frame(y = sample(population, 8, replace = FALSE))
+  samp2 <- data.frame(y = sample(population, 40, replace = FALSE))
+
+  # Model the data
+  m1 <- lm(y ~ 1, data = samp1)
+  m2 <- lm(y ~ 1, data = samp2)
+  
+  # Extract values from the models
+  results_8[i, 1] <- coef(summary(m1))[1, 1]
+  results_8[i, 2] <- coef(summary(m1))[1, 2]
+  results_8[i, 3] <- coef(summary(m1))[1, 4]
+
+  results_40[i, 1] <- coef(summary(m2))[1, 1]
+  results_40[i, 2] <- coef(summary(m2))[1, 2]
+  results_40[i, 3] <- coef(summary(m2))[1, 4]
+  
+  
+}
+
+
+# Save the results in a combined data frame
+
+results_null <- bind_rows(results_8, results_40)
+```
+
+```{r}
+results_null %>%
+  ggplot(aes(pval)) + 
+  geom_histogram() +
+  facet_wrap(~ n)
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: "tbl-eight"
+#| tbl-cap: "Question Eight"
+
+set.seed(2)
+results_null %>% 
+  group_by(n) %>% 
+  filter(pval < 0.05) %>% 
+  summarise(count = n(),
+            percent = (n()/1000) * 100) %>% 
+  gt() %>% 
+  cols_label(n = "Sample Size",
+             count = "Significant Results",
+             percent = "Percentage (%)")
+```
+
+#### 8. With a significance level of 5%, how many studies would you give a "false positive" result if you did many repeated studies?
